@@ -9,6 +9,9 @@ import tensorflow.contrib.slim as slim
 import numpy as np
 import gym
 import matplotlib.pyplot as plt
+# from my_utility import get_log_dir
+import my_utility as utility
+
 
 ##################################################
 try:
@@ -68,13 +71,24 @@ class agent():
 
 tf.reset_default_graph()  # Clear the Tensorflow graph.
 
+
 myAgent = agent(lr=1e-2, s_size_4=4, a_size_2=2, h_size_8=8)  # Load the agent.
 
+# total_episodes_5k = utility.get_episode_restriction(5000)  # Set total number of episodes to train agent on.
+# max_ep_1k = utility.get_episode_restriction(999)
 total_episodes_5k = 5000  # Set total number of episodes to train agent on.
 max_ep_1k = 999
 update_frequency_5 = 5
 
 init = tf.global_variables_initializer()
+
+
+
+log_dir = utility.get_log_dir("q2")
+summary_writer = tf.summary.FileWriter(log_dir, tf.get_default_graph())
+summary_writer.close()
+
+
 
 # Launch the tensorflow graph
 with tf.Session() as sess:
@@ -127,7 +141,6 @@ with tf.Session() as sess:
             # Update our running tally of scores.
         if i % 100 == 0:
             print(np.mean(total_reward[-100:]))
-
 
 """
 
