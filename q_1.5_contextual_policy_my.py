@@ -7,12 +7,16 @@ import tensorflow as tf
 import tensorflow.contrib.slim as slim
 import numpy as np
 
+
 ################### Contextual Bandits ###############################
 class contextual_bandit():
     def __init__(self):
         self.state = 0
         # List out our bandits. Currently arms 4, 2, and 1 (respectively) are the most optimal.
-        self.bandits = np.array([[0.2, 0, -0.0, -5], [0.1, -5, 1, 0.25], [-5, 5, 5, 5]])
+        self.bandits = np.array([
+            [0.2, 0, -0.0, -5],
+            [0.1, -5, 1, 0.25],
+            [-5, 5, 5, 5]])
         self.num_bandits = self.bandits.shape[0]  # 3
         self.num_actions = self.bandits.shape[1]  # 4
 

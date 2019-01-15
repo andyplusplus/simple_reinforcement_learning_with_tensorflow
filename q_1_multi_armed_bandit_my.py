@@ -15,18 +15,21 @@ def pullBandit(bandit):
         #return a negative reward.
         return -1
 
+
 ############### The Agent #######################################
 tf.reset_default_graph()
 
-#These two lines established the feed-forward part of the network. This does the actual choosing.
+# These two lines established the feed-forward part of the network.
+# This does the actual choosing.
 weights = tf.Variable(tf.ones([num_bandits]))
 chosen_action = tf.argmax(weights,0)
 
-#The next six lines establish the training proceedure. We feed the reward and chosen action into the network
-#to compute the loss, and use it to update the network.
-reward_holder = tf.placeholder(shape=[1],dtype=tf.float32)
+# The next six lines establish the training procedure.
+# We feed the reward and chosen action into the network
+#   to compute the loss, and use it to update the network.
+reward_holder = tf.placeholder(shape=[1],dtype=tf.float32)  # reward
 action_holder = tf.placeholder(shape=[1],dtype=tf.int32)
-responsible_weight = tf.slice(weights,action_holder,[1])
+responsible_weight = tf.slice(weights,action_holder,[1])    # policy --> chosen action's weight
 loss = -(tf.log(responsible_weight)*reward_holder)
 optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
 update = optimizer.minimize(loss)
