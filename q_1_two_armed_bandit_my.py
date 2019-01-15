@@ -3,7 +3,7 @@ import numpy as np
 
 ############### The Bandits #######################################
 #List out our bandits. Currently bandit 4 (index#3) is set to most often provide a positive reward.
-bandits = [0.2,0,-0.2,-5]
+bandits = [0.2, 0, -0.2, -5]
 num_bandits = len(bandits)
 def pullBandit(bandit):
     #Get a random number.
@@ -22,14 +22,14 @@ tf.reset_default_graph()
 # These two lines established the feed-forward part of the network.
 # This does the actual choosing.
 weights = tf.Variable(tf.ones([num_bandits]))
-chosen_action = tf.argmax(weights,0)
+chosen_action = tf.argmax(weights, 0)
 
 # The next six lines establish the training procedure.
 # We feed the reward and chosen action into the network
 #   to compute the loss, and use it to update the network.
-reward_holder = tf.placeholder(shape=[1],dtype=tf.float32)  # reward
-action_holder = tf.placeholder(shape=[1],dtype=tf.int32)
-responsible_weight = tf.slice(weights,action_holder,[1])    # policy --> chosen action's weight
+reward_holder = tf.placeholder(shape=[1], dtype=tf.float32)  # reward
+action_holder = tf.placeholder(shape=[1], dtype=tf.int32)
+responsible_weight = tf.slice(weights, action_holder, [1])    # policy --> chosen action's weight
 loss = -(tf.log(responsible_weight)*reward_holder)
 optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
 update = optimizer.minimize(loss)
@@ -59,7 +59,7 @@ with tf.Session() as sess:
         reward = pullBandit(my_bandits)  # Get our reward from picking one of the bandits.
         # print("bandits, reward, action  ", my_bandits, "  ", reward, "   ", action)
         # Update the network.
-        _, resp, ww = sess.run([update, responsible_weight, weights],
+        _, resp, ww = sess.run([update, responsible_weight, weights], 
                                feed_dict={reward_holder: [reward], action_holder: [action]})
 
         print("bandits: {}, reward {}, action {}  ===>   resp {}, ww {}".format(my_bandits, reward, action, resp, ww))
@@ -67,22 +67,18 @@ with tf.Session() as sess:
         # Update our running tally of scores.
         total_reward[action] += reward
         if i % 50 == 0:
-            print
-            "Running reward for the " + str(num_bandits) + " bandits: " + str(total_reward)
+            print("Running reward for the " + str(num_bandits) + " bandits: " + str(total_reward))
         i += 1
-print
-"The agent thinks bandit " + str(np.argmax(ww) + 1) + " is the most promising...."
+print("The agent thinks bandit " + str(np.argmax(ww) + 1) + " is the most promising....")
 if np.argmax(ww) == np.argmax(-np.array(bandits)):
-    print
-    "...and it was right!"
+    print("...and it was right!")
 else:
-    print
-    "...and it was wrong!"
+    print("...and it was wrong!")
 
 
 def test():
     """
-/usr/local/bin/python3.6 /Users/a/l/simple_reinforcement_learning/q_1_multi_armed_bandit_my.py
+/usr/local/bin/python3.6 /Users/a/l/simple_reinforcement_learning/q_1_two_armed_bandit_my.py
 2019-01-07 11:17:49.077221: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 FMA
 bandits: 0.2, reward -1, action 0  ===>   resp [1.], ww [0.999 1.    1.    1.   ]
 bandits: 0, reward -1, action 1  ===>   resp [1.], ww [0.999 0.999 1.    1.   ]
