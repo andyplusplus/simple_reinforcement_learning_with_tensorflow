@@ -37,7 +37,7 @@ def discount_rewards(r):
 
 
 class agent():
-    def __init__(self, lr, s_size_4, a_size_2, h_size_8): # (lr=1e-2, s_size=4, a_size=2, h_size=8)
+    def __init__(self, lr, s_size_4, a_size_2, h_size_8): # (lr=1e-2, s_size=4, a_size=2, h_size_512=8)
         # These lines established the feed-forward part of the network. The agent takes a state and produces an action.
         self.state_in_x4 = tf.placeholder(shape=[None, s_size_4], dtype=tf.float32) #(?, 4)  #############################
         hidden_x8 = slim.fully_connected(self.state_in_x4, h_size_8, biases_initializer=None, activation_fn=tf.nn.relu)

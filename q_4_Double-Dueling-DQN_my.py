@@ -24,22 +24,19 @@ import os
 # while making the world larger increases the challenge.
 
 from gridworld import gameEnv
+
 env = gameEnv(partial=False, size=5)
 
-# Above is an example of a starting environment in our simple game. The agent controls the blue square, 
-# and can move up, down, left, or right. 
+# Above is an example of a starting environment in our simple game.
+# The agent controls the blue square, and can move up, down, left, or right.
 # The goal is to move to the green square (for +1 reward) and avoid the red square (for -1 reward). 
 # The position of the three blocks is randomized every episode.
 
 #######################################################
 # ### Implementing the network itself
 #######################################################
-
-# In[3]:
-
-
 class Qnetwork():
-    def __init__(self, h_size):
+    def __init__(self, h_size_512):
         #The network recieves a frame from the game, flattened into an array.
         #It then resizes it and processes it through four convolutional layers.
         self.scalarInput =  tf.placeholder(shape=[None, 21168], dtype=tf.float32)
@@ -47,15 +44,15 @@ class Qnetwork():
         self.conv1 = slim.conv2d(inputs=self.imageIn, num_outputs=32, kernel_size=[8, 8], stride=[4, 4], padding='VALID', biases_initializer=None)
         self.conv2 = slim.conv2d(inputs=self.conv1, num_outputs=64, kernel_size=[4, 4], stride=[2, 2], padding='VALID', biases_initializer=None)
         self.conv3 = slim.conv2d(inputs=self.conv2, num_outputs=64, kernel_size=[3, 3], stride=[1, 1], padding='VALID', biases_initializer=None)
-        self.conv4 = slim.conv2d(inputs=self.conv3, num_outputs=h_size, kernel_size=[7, 7], stride=[1, 1], padding='VALID', biases_initializer=None)
+        self.conv4 = slim.conv2d(inputs=self.conv3, num_outputs=h_size_512, kernel_size=[7, 7], stride=[1, 1], padding='VALID', biases_initializer=None)
         
         #We take the output from the final convolutional layer and split it into separate advantage and value streams.
         self.streamAC, self.streamVC = tf.split(self.conv4, 2, 3)
         self.streamA = slim.flatten(self.streamAC)
         self.streamV = slim.flatten(self.streamVC)
         xavier_init = tf.contrib.layers.xavier_initializer()
-        self.AW = tf.Variable(xavier_init([h_size//2, env.actions]))
-        self.VW = tf.Variable(xavier_init([h_size//2, 1]))
+        self.AW = tf.Variable(xavier_init([h_size_512 // 2, env.actions]))
+        self.VW = tf.Variable(xavier_init([h_size_512 // 2, 1]))
         self.Advantage = tf.matmul(self.streamA, self.AW)
         self.Value = tf.matmul(self.streamV, self.VW)
         
@@ -80,8 +77,6 @@ class Qnetwork():
 # ### Experience Replay
 #######################################################
 # In[4]: # This class allows us to store experies and sample then randomly to train the network.
-
-
 class experience_buffer():
     def __init__(self, buffer_size = 50000):
         self.buffer = []
@@ -97,18 +92,21 @@ class experience_buffer():
 
 
 # In[5]: # This is a simple function to resize our game frames.
-
 def processState(states):
     return np.reshape(states, [21168])
 
 
 # In[6]: # These functions allow us to update the parameters of our target network with those of the primary network.
-
-def updateTargetGraph(tfVars, tau):
+def updateTargetGraph(tfVars, tau_001):
     total_vars = len(tfVars)
     op_holder = []
     for idx, var in enumerate(tfVars[0:total_vars//2]):
-        op_holder.append(tfVars[idx+total_vars//2].assign((var.value()*tau) + ((1-tau)*tfVars[idx+total_vars//2].value())))
+        op_holder.append(
+            tfVars[idx+total_vars//2].assign(
+                (var.value() * tau_001) +
+                ((1 - tau_001) * tfVars[idx + total_vars // 2].value())
+            )
+        )
     return op_holder
 
 def updateTarget(op_holder, sess):
@@ -122,41 +120,37 @@ def updateTarget(op_holder, sess):
 
 # In[7]: # Setting all the training parameters
 
-batch_size = 32 #How many experiences to use for each training step.
-update_freq = 4 #How often to perform a training step.
+batch_size_32 = 32 #How many experiences to use for each training step.
+update_freq_4 = 4 #How often to perform a training step.
 y = .99 #Discount factor on the target Q-values
-startE = 1 #Starting chance of random action
-endE = 0.1 #Final chance of random action
-annealing_steps = 10000. #How many steps of training to reduce startE to endE.
-num_episodes = 10000 #How many episodes of game environment to train network with.
-pre_train_steps = 10000 #How many steps of random actions before training begins.
-max_epLength = 50 #The max allowed length of our episode.
+startE_1 = 1 #Starting chance of random action
+endE_01 = 0.1 #Final chance of random action
+annealing_steps_10k = 10000. #How many steps of training to reduce startE_1 to endE_01.
+# num_episodes_1k = 10000 #How many episodes of game environment to train network with.
+num_episodes_1k = 1000 #How many episodes of game environment to train network with.
+pre_train_steps_10k = 10000 #How many steps of random actions before training begins.
+max_epLength_50 = 50 #The max allowed length of our episode.
 load_model = False #Whether to load a saved model.
 path = "./dqn" #The path to save our model to.
-h_size = 512 #The size of the final convolutional layer before splitting it into Advantage and Value streams.
-tau = 0.001 #Rate to update target network toward primary network
+h_size_512 = 512 #The size of the final convolutional layer before splitting it into Advantage and Value streams.
+tau_001 = 0.001 #Rate to update target network toward primary network
+
+
 
 
 # In[ ]:
-
-
 tf.reset_default_graph()
-mainQN = Qnetwork(h_size)
-targetQN = Qnetwork(h_size)
-
+mainQN = Qnetwork(h_size_512)
+targetQN = Qnetwork(h_size_512)
 init = tf.global_variables_initializer()
-
 saver = tf.train.Saver()
-
 trainables = tf.trainable_variables()
-
-targetOps = updateTargetGraph(trainables, tau)
-
+targetOps = updateTargetGraph(trainables, tau_001)
 myBuffer = experience_buffer()
 
 #Set the rate of random action decrease. 
-e = startE
-stepDrop = (startE - endE)/annealing_steps
+e = startE_1
+stepDrop = (startE_1 - endE_01) / annealing_steps_10k
 
 #create lists to contain total rewards and steps per episode
 jList = []
@@ -173,7 +167,7 @@ with tf.Session() as sess:
         print('Loading Model...')
         ckpt = tf.train.get_checkpoint_state(path)
         saver.restore(sess, ckpt.model_checkpoint_path)
-    for i in range(num_episodes):
+    for i in range(num_episodes_1k):
         episodeBuffer = experience_buffer()
         #Reset environment and get first new observation
         s = env.reset()
@@ -182,10 +176,10 @@ with tf.Session() as sess:
         rAll = 0
         j = 0
         #The Q-Network
-        while j < max_epLength: #If the agent takes longer than 200 moves to reach either of the blocks, end the trial.
+        while j < max_epLength_50: #If the agent takes longer than 200 moves to reach either of the blocks, end the trial.
             j+=1
             #Choose an action by greedily (with e chance of random action) from the Q-network
-            if np.random.rand(1) < e or total_steps < pre_train_steps:
+            if np.random.rand(1) < e or total_steps < pre_train_steps_10k:
                 a = np.random.randint(0, 4)
             else:
                 a = sess.run(mainQN.predict, feed_dict={mainQN.scalarInput:[s]})[0]
@@ -194,17 +188,17 @@ with tf.Session() as sess:
             total_steps += 1
             episodeBuffer.add(np.reshape(np.array([s, a, r, s1, d]), [1, 5])) #Save the experience to our episode buffer.
             
-            if total_steps > pre_train_steps:
-                if e > endE:
+            if total_steps > pre_train_steps_10k:
+                if e > endE_01:
                     e -= stepDrop
                 
-                if total_steps % (update_freq) == 0:
-                    trainBatch = myBuffer.sample(batch_size) #Get a random batch of experiences.
+                if total_steps % (update_freq_4) == 0:
+                    trainBatch = myBuffer.sample(batch_size_32) #Get a random batch of experiences.
                     #Below we perform the Double-DQN update to the target Q-values
                     Q1 = sess.run(mainQN.predict, feed_dict={mainQN.scalarInput:np.vstack(trainBatch[:, 3])})
                     Q2 = sess.run(targetQN.Qout, feed_dict={targetQN.scalarInput:np.vstack(trainBatch[:, 3])})
                     end_multiplier = -(trainBatch[:, 4] - 1)
-                    doubleQ = Q2[range(batch_size), Q1]
+                    doubleQ = Q2[range(batch_size_32), Q1]
                     targetQ = trainBatch[:, 2] + (y*doubleQ * end_multiplier)
                     #Update the network with our target values.
                     _ = sess.run(mainQN.updateModel, feed_dict={mainQN.scalarInput:np.vstack(trainBatch[:, 0]), mainQN.targetQ:targetQ, mainQN.actions:trainBatch[:, 1]})
@@ -226,7 +220,7 @@ with tf.Session() as sess:
         if len(rList) % 10 == 0:
             print(total_steps, np.mean(rList[-10:]), e)
     saver.save(sess, path+'/model-'+str(i)+'.ckpt')
-print("Percent of succesful episodes: " + str(sum(rList)/num_episodes) + "%")
+print("Percent of succesful episodes: " + str(sum(rList) / num_episodes_1k) + "%")
 
 
 #######################################################
