@@ -46,9 +46,7 @@ init = tf.global_variables_initializer()
 # Launch the tensorflow graph
 with tf.Session() as sess:
     sess.run(init)
-    i = 0
-    while i < total_episodes:
-
+    for i in range(total_episodes):
         # Choose either a random action or one from our network.
         if np.random.rand(1) < e:
             action = np.random.randint(num_bandits)
@@ -68,7 +66,7 @@ with tf.Session() as sess:
         total_reward[action] += reward
         if i % 50 == 0:
             print("Running reward for the " + str(num_bandits) + " bandits: " + str(total_reward))
-        i += 1
+
 print("The agent thinks bandit " + str(np.argmax(ww) + 1) + " is the most promising....")
 if np.argmax(ww) == np.argmax(-np.array(bandits)):
     print("...and it was right!")

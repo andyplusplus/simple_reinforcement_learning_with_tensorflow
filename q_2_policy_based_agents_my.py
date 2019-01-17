@@ -12,8 +12,7 @@ import matplotlib.pyplot as plt
 # from my_utility import get_log_dir
 import my_utility as utility
 
-
-##################################################
+#######################################################################
 try:
     xrange = xrange
 except:
@@ -21,7 +20,9 @@ except:
 
 env = gym.make('CartPole-v0')
 
-################### Policy based agent ###############################
+#######################################################################
+# Policy based agent
+#######################################################################
 gamma_099 = 0.99
 
 def discount_rewards(r):
@@ -32,7 +33,6 @@ def discount_rewards(r):
         running_add = running_add * gamma_099 + r[t]
         discounted_r[t] = running_add
     return discounted_r
-
 
 
 
@@ -49,7 +49,8 @@ class agent():
         self.reward_holder = tf.placeholder(shape=[None], dtype=tf.float32)  #############################
         self.action_holder = tf.placeholder(shape=[None], dtype=tf.int32)  #############################
 
-        self.indexes = tf.range(0, tf.shape(self.output_x2)[0]) * tf.shape(self.output_x2)[1] + self.action_holder #number of output elements + action_holder
+        #number of output elements + action_holder
+        self.indexes = tf.range(0, tf.shape(self.output_x2)[0]) * tf.shape(self.output_x2)[1] + self.action_holder
         self.responsible_outputs = tf.gather(tf.reshape(self.output_x2, [-1]), self.indexes)
 
         self.loss = -tf.reduce_mean(tf.log(self.responsible_outputs) * self.reward_holder)
@@ -67,14 +68,17 @@ class agent():
 
 
 
-##################### Training the agent #############################
+#######################################################################
+# Training the agent
+#######################################################################
 
 tf.reset_default_graph()  # Clear the Tensorflow graph.
 
 
 myAgent = agent(lr=1e-2, s_size_4=4, a_size_2=2, h_size_8=8)  # Load the agent.
 
-# total_episodes_5k = utility.get_episode_restriction(5000)  # Set total number of episodes to train agent on.
+# total_episodes_5k = utility.get_episode_restriction(5000)
+# Set total number of episodes to train agent on.
 # max_ep_1k = utility.get_episode_restriction(999)
 total_episodes_5k = 5000  # Set total number of episodes to train agent on.
 max_ep_1k = 999
@@ -82,12 +86,9 @@ update_frequency_5 = 5
 
 init = tf.global_variables_initializer()
 
-
-
 log_dir = utility.get_log_dir("q2")
 summary_writer = tf.summary.FileWriter(log_dir, tf.get_default_graph())
 summary_writer.close()
-
 
 
 # Launch the tensorflow graph
@@ -109,13 +110,13 @@ with tf.Session() as sess:
             a_dist = sess.run(myAgent.output_x2, feed_dict={myAgent.state_in_x4: [s]})
             a = np.random.choice(a_dist[0], p=a_dist[0])
             a = np.argmax(a_dist == a)
-            # run the action, get state, reward, done state, ... and add to the ep_history
-            s1, r, d, _ = env.step(a)  # Get our reward for taking an action given a bandit.
+            # run the action, ... and add to the ep_history
+            s1, r, is_done, _ = env.step(a)  # Get our reward for taking an action given a bandit.
             ep_history.append([s, a, r, s1])
-            s = s1
             running_reward += r
+            s = s1
 
-            if d == True:
+            if is_done == True:
                 # Update the network.
                 ep_history = np.array(ep_history)
                 ep_history[:, 2] = discount_rewards(ep_history[:, 2])

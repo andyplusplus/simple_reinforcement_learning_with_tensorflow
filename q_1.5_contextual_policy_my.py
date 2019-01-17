@@ -39,7 +39,9 @@ class contextual_bandit():
 
 #################### The Policy-based Agent ##############################
 class agent():
+
     def __init__(self, lr, s_size, a_size): # (0.001, 3, 4)
+
         #These lines established the feed-forward part of the network. The agent takes a state and produces an action.
         self.state_in= tf.placeholder(shape=[1], dtype=tf.int32)    ########### (1,)
         state_in_OH = slim.one_hot_encoding(self.state_in, s_size)  # (1,3)
@@ -49,7 +51,8 @@ class agent():
         self.output = tf.reshape(output, [-1])  #  (4,)
         self.chosen_action = tf.argmax(self.output, 0)
 
-        #The next six lines establish the training proceedure. We feed the reward and chosen action into the network
+
+        #The next six lines establish the training procedure. We feed the reward and chosen action into the network
         #to compute the loss, and use it to update the network.
         self.reward_holder = tf.placeholder(shape=[1], dtype=tf.float32)   ###############
         self.action_holder = tf.placeholder(shape=[1], dtype=tf.int32)     ###############
@@ -78,8 +81,11 @@ init = tf.global_variables_initializer()
 
 with tf.Session() as sess:
     sess.run(init)
+
     for i in range(total_episodes):
-        s = cBandit.getBandit()  # Get a state from the environment.
+
+        # Get a state from the environment.
+        s = cBandit.getBandit()
 
         # Choose either a random action or one from our network.
         if np.random.rand(1) < e:
