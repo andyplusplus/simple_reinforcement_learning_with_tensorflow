@@ -17,6 +17,7 @@ import tensorflow.contrib.slim as slim
 import matplotlib.pyplot as plt
 import scipy.misc
 import os
+import q_4_helper
 
 
 # ### Load the game environment
@@ -130,8 +131,6 @@ annealing_steps_10k = 10000. #How many steps of training to reduce startE_1 to e
 num_episodes_1k = 1000 #How many episodes of game environment to train network with.
 pre_train_steps_10k = 10000 #How many steps of random actions before training begins.
 max_epLength_50 = 50 #The max allowed length of our episode.
-load_model = False #Whether to load a saved model.
-path = "./dqn" #The path to save our model to.
 h_size_512 = 512 #The size of the final convolutional layer before splitting it into Advantage and Value streams.
 tau_001 = 0.001 #Rate to update target network toward primary network
 
@@ -143,7 +142,6 @@ tf.reset_default_graph()
 mainQN = Qnetwork(h_size_512)
 targetQN = Qnetwork(h_size_512)
 init = tf.global_variables_initializer()
-saver = tf.train.Saver()
 trainables = tf.trainable_variables()
 targetOps = updateTargetGraph(trainables, tau_001)
 myBuffer = experience_buffer()
@@ -157,16 +155,9 @@ jList = []
 rList = []
 total_steps = 0
 
-#Make a path for our model to be saved in.
-if not os.path.exists(path):
-    os.makedirs(path)
-
 with tf.Session() as sess:
     sess.run(init)
-    if load_model == True:
-        print('Loading Model...')
-        ckpt = tf.train.get_checkpoint_state(path)
-        saver.restore(sess, ckpt.model_checkpoint_path)
+    ckpt = q_4_helper.load_model(sess)
     for i in range(num_episodes_1k):
         episodeBuffer = experience_buffer()
         #Reset environment and get first new observation
@@ -174,10 +165,9 @@ with tf.Session() as sess:
         s = processState(s)
         d = False
         rAll = 0
-        j = 0
+
         #The Q-Network
-        while j < max_epLength_50: #If the agent takes longer than 200 moves to reach either of the blocks, end the trial.
-            j+=1
+        for j in range(max_epLength_50):#If the agent takes longer than 200 moves to reach either of the blocks, end the trial.
             #Choose an action by greedily (with e chance of random action) from the Q-network
             if np.random.rand(1) < e or total_steps < pre_train_steps_10k:
                 a = np.random.randint(0, 4)
@@ -215,11 +205,11 @@ with tf.Session() as sess:
         rList.append(rAll)
         #Periodically save the model. 
         if i % 1000 == 0:
-            saver.save(sess, path+'/model-'+str(i)+'.ckpt')
-            print("Saved Model")
+            q_4_helper.save_model_i(sess, i)
         if len(rList) % 10 == 0:
             print(total_steps, np.mean(rList[-10:]), e)
-    saver.save(sess, path+'/model-'+str(i)+'.ckpt')
+    q_4_helper.save_model_i(sess, i)
+
 print("Percent of succesful episodes: " + str(sum(rList) / num_episodes_1k) + "%")
 
 
